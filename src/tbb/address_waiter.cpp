@@ -53,17 +53,22 @@ public:
 static constexpr std::size_t num_address_waiters = 2 << 10;
 static_assert(std::is_standard_layout<address_waiter>::value,
               "address_waiter must be with standard layout");
-static address_waiter address_waiter_table[num_address_waiters];
+
+static auto get_address_waiter_table()
+{
+	static auto address_waiter_table = new address_waiter[num_address_waiters];
+    return address_waiter_table;
+}
 
 void clear_address_waiter_table() {
     for (std::size_t i = 0; i < num_address_waiters; ++i) {
-        address_waiter_table[i].destroy();
+        get_address_waiter_table()[i].destroy();
     }
 }
 
 static address_waiter& get_address_waiter(void* address) {
     std::uintptr_t tag = std::uintptr_t(address);
-    return address_waiter_table[((tag >> 5) ^ tag) % num_address_waiters];
+    return get_address_waiter_table()[((tag >> 5) ^ tag) % num_address_waiters];
 }
 
 void wait_on_address(void* address, d1::delegate_base& predicate, std::uintptr_t context) {

@@ -74,7 +74,7 @@ public:
 };
 
 // rw_scoped_lock supposes that Mutex operations never throw
-template <typename Mutex>
+template <typename Mutex, bool DefaultWrite = true>
 class rw_scoped_lock {
 public:
     //! Construct lock that has not acquired a mutex.
@@ -82,7 +82,7 @@ public:
     constexpr rw_scoped_lock() noexcept {}
 
     //! Acquire lock on given mutex.
-    rw_scoped_lock(Mutex& m, bool write = true) {
+    rw_scoped_lock(Mutex& m, bool write = DefaultWrite) {
         acquire(m, write);
     }
 
@@ -110,7 +110,7 @@ public:
     }
 
     //! Try acquire lock on given mutex.
-    bool try_acquire(Mutex& m, bool write = true) {
+    bool try_acquire(Mutex& m, bool write = DefaultWrite) {
         bool succeed = write ? m.try_lock() : m.try_lock_shared();
         if (succeed) {
             m_mutex = &m;
@@ -164,7 +164,7 @@ protected:
 
     //! If mutex != nullptr, then is_writer is true if holding a writer lock, false if holding a reader lock.
     /** Not defined if not holding a lock. */
-    bool m_is_writer {false};
+    bool m_is_writer { DefaultWrite };
 };
 
 } // namespace d1

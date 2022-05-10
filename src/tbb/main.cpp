@@ -66,9 +66,7 @@ extern bool ITT_Present;
 void ITT_DoUnsafeOneTimeInitialization();
 #endif
 
-#if !(_WIN32||_WIN64) || __TBB_SOURCE_DIRECTLY_INCLUDED
 static __TBB_InitOnce __TBB_InitOnceHiddenInstance;
-#endif
 
 #if TBB_USE_ASSERT
 std::atomic<int> the_observer_proxy_count;
@@ -134,35 +132,6 @@ void DoOneTimeInitialization() {
     }
     __TBB_InitOnce::unlock();
 }
-
-#if (_WIN32||_WIN64) && !__TBB_SOURCE_DIRECTLY_INCLUDED
-//! Windows "DllMain" that handles startup and shutdown of dynamic library.
-extern "C" bool WINAPI DllMain( HANDLE /*hinstDLL*/, DWORD reason, LPVOID lpvReserved ) {
-    switch( reason ) {
-        case DLL_PROCESS_ATTACH:
-            __TBB_InitOnce::add_ref();
-            break;
-        case DLL_PROCESS_DETACH:
-            // Since THREAD_DETACH is not called for the main thread, call auto-termination
-            // here as well - but not during process shutdown (due to risk of a deadlock).
-            if ( lpvReserved == nullptr ) { // library unload
-                governor::terminate_external_thread();
-            }
-            __TBB_InitOnce::remove_ref();
-            // It is assumed that InitializationDone is not set after DLL_PROCESS_DETACH,
-            // and thus no race on InitializationDone is possible.
-            if ( __TBB_InitOnce::initialization_done() ) {
-                // Remove reference that we added in DoOneTimeInitialization.
-                __TBB_InitOnce::remove_ref();
-            }
-            break;
-        case DLL_THREAD_DETACH:
-            governor::terminate_external_thread();
-            break;
-    }
-    return true;
-}
-#endif /* (_WIN32||_WIN64) && !__TBB_SOURCE_DIRECTLY_INCLUDED */
 
 } // namespace r1
 } // namespace detail

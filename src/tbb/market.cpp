@@ -378,7 +378,7 @@ arena* market::arena_in_need ( arena_list_type* arenas, arena* hint ) {
 arena* market::arena_in_need(arena* prev) {
     if (my_total_demand.load(std::memory_order_acquire) <= 0)
         return nullptr;
-    arenas_list_mutex_type::scoped_lock lock(my_arenas_list_mutex, /*is_writer=*/false);
+    arenas_list_mutex_type::scoped_lock_read lock(my_arenas_list_mutex);
     // TODO: introduce three state response: alive, not_alive, no_market_arenas
     if ( is_arena_alive(prev) )
         return arena_in_need(my_arenas, prev);

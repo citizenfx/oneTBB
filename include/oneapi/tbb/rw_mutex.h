@@ -17,6 +17,25 @@
 #ifndef __TBB_rw_mutex_H
 #define __TBB_rw_mutex_H
 
+#if __has_include(<shared_mutex>)
+#include <shared_mutex>
+
+namespace tbb {
+namespace detail {
+namespace d1 {
+struct rw_mutex : std::shared_mutex
+{
+    using scoped_lock = std::unique_lock<std::shared_mutex>;
+    using scoped_lock_read = std::shared_lock<std::shared_mutex>;
+};
+}
+}
+
+inline namespace v1 {
+using detail::d1::rw_mutex;
+}
+}
+#else
 #include "detail/_namespace_injection.h"
 #include "detail/_utils.h"
 #include "detail/_waitable_atomic.h"
@@ -45,6 +64,7 @@ public:
     rw_mutex& operator=(const rw_mutex&) = delete;
 
     using scoped_lock = rw_scoped_lock<rw_mutex>;
+    using scoped_lock_read = rw_scoped_lock<rw_mutex, false>;
 
     //! Mutex traits
     static constexpr bool is_rw_mutex = true;
@@ -212,5 +232,5 @@ using detail::d1::rw_mutex;
 } // namespace v1
 
 } // namespace tbb
-
+#endif
 #endif // __TBB_rw_mutex_H
